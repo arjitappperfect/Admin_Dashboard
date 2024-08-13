@@ -5,6 +5,8 @@ import SideBar from "./Components/SideBar";
 import ShowItem from "./Components/ShowItem";
 import Counting from "./Components/counting";
 import Modals from "./Components/Modals";
+import UpdateModal from "./Components/UpdateModal";
+import toast, { Toaster } from "react-hot-toast";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -40,6 +42,8 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showModal, setShowModal] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
+  const [itemToUpdate, setItemToUpdate] = useState<Item | null>(null);
 
   useEffect(() => {
     localStorage.setItem("lists", JSON.stringify(items));
@@ -67,14 +71,13 @@ export default function Home() {
     try {
       schema.parse(newItem);
       setErrors({});
-      setItems([newItem,...items]);
+      setItems([newItem, ...items]);
       setInputName("");
       setInputEmail("");
       setInputPhoneNumber("");
       setCount(count + 1);
       setShowModal(false);
-    } 
-    catch (error) {
+    } catch (error) {
       if (error instanceof ZodError) {
         setErrors(
           error.errors.reduce((acc, err) => {
@@ -85,12 +88,11 @@ export default function Home() {
     }
   };
 
-  console.log(errors);
-
   const deleteItem = (id: number) => {
     const updatedItems = items.filter((item) => item.id !== id);
     setItems(updatedItems);
     setCount(count - 1);
+    toast("Deleted Successfully!");
   };
 
   const onInputNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,6 +113,46 @@ export default function Home() {
     setSearchTerm(event.target.value);
   };
 
+  const openEditModal = (item: Item) => {
+    setItemToUpdate(item);
+    setInputName(item.name);
+    setInputEmail(item.email);
+    setInputPhoneNumber(item.phoneNumber);
+    setShowUpdateModal(true);
+  };
+
+  const updateItem = () => {
+    if (itemToUpdate) {
+      const updatedItem: Item = {
+        ...itemToUpdate,
+        name: inputName,
+        email: inputEmail,
+        phoneNumber: inputPhoneNumber,
+      };
+      try {
+        schema.parse(updatedItem);
+        setErrors({});
+        const updatedItems = items.map((item) =>
+          item.id === itemToUpdate.id ? updatedItem : item
+        );
+        setItems(updatedItems);
+        setInputName("");
+        setInputEmail("");
+        setInputPhoneNumber("");
+        setCount(count); // Count remains unchanged
+        setShowUpdateModal(false);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          setErrors(
+            error.errors.reduce((acc, err) => {
+              return { ...acc, [err.path[0]]: err.message };
+            }, {})
+          );
+        }
+      }
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-200">
       <SideBar />
@@ -126,7 +168,16 @@ export default function Home() {
         >
           Add Users
         </button>
-        <Modals isVisible={showModal} onClose={() => setShowModal(false)}>
+
+        <Modals
+          isVisible={showModal}
+          onClose={() => {
+            setInputName("");
+            setInputEmail("");
+            setInputPhoneNumber("");
+            setShowModal(false);
+          }}
+        >
           <div className="space-y-4">
             <div>
               <label className="block text-gray-700 font-medium mb-1">
@@ -139,7 +190,9 @@ export default function Home() {
                 value={inputName}
                 onChange={onInputNameChange}
               />
-              {errors.name && <span className="text-red-700 text-sm">{errors.name}</span>}
+              {errors.name && (
+                <span className="text-red-700 text-sm">{errors.name}</span>
+              )}
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">
@@ -151,7 +204,10 @@ export default function Home() {
                 placeholder="Enter email"
                 value={inputEmail}
                 onChange={onInputEmailChange}
-              /> {errors.email && <span className="text-red-700 text-sm">{errors.email}</span>}
+              />{" "}
+              {errors.email && (
+                <span className="text-red-700 text-sm">{errors.email}</span>
+              )}
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">
@@ -163,7 +219,12 @@ export default function Home() {
                 placeholder="Enter phone number"
                 value={inputPhoneNumber}
                 onChange={onInputPhoneNumberChange}
-              /> {errors.phoneNumber && <span className="text-red-700 text-sm">{errors.phoneNumber}</span>}
+              />{" "}
+              {errors.phoneNumber && (
+                <span className="text-red-700 text-sm">
+                  {errors.phoneNumber}
+                </span>
+              )}
               <button
                 className="w-full bg-indigo-600 text-white py-2 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 mt-4"
                 onClick={addItem}
@@ -174,7 +235,79 @@ export default function Home() {
           </div>
         </Modals>
 
-        <ShowItem filteredItems={filteredItems} deleteItem={deleteItem} />
+        <UpdateModal
+          isVisible={showUpdateModal}
+          onClose={() => {
+            setInputName("");
+            setInputEmail("");
+            setInputPhoneNumber("");
+            setShowUpdateModal(false);
+          }}
+          onSubmit={updateItem}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Name:
+              </label>
+              <input
+                type="text"
+                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150"
+                placeholder="Enter name"
+                value={inputName}
+                onChange={onInputNameChange}
+              />
+              {errors.name && (
+                <span className="text-red-700 text-sm">{errors.name}</span>
+              )}
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Email:
+              </label>
+              <input
+                type="email"
+                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150"
+                placeholder="Enter email"
+                value={inputEmail}
+                onChange={onInputEmailChange}
+              />
+              {errors.email && (
+                <span className="text-red-700 text-sm">{errors.email}</span>
+              )}
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Phone Number:
+              </label>
+              <input
+                type="tel"
+                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150"
+                placeholder="Enter phone number"
+                value={inputPhoneNumber}
+                onChange={onInputPhoneNumberChange}
+              />
+              {errors.phoneNumber && (
+                <span className="text-red-700 text-sm">
+                  {errors.phoneNumber}
+                </span>
+              )}
+              <button
+                className="w-full bg-indigo-600 text-white py-2 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 mt-4"
+                onClick={updateItem}
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </UpdateModal>
+
+        <ShowItem
+          filteredItems={filteredItems}
+          deleteItem={deleteItem}
+          openEditModal={openEditModal}
+          Toaster={Toaster}
+        />
       </div>
     </div>
   );

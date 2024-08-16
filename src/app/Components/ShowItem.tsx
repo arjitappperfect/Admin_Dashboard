@@ -12,7 +12,7 @@ interface ShowItemProps {
   filteredItems: Item[];
   deleteItem: (id: number) => void;
   openEditModal: (item: Item) => void;
-  Toaster: any;
+  Toaster: React.ComponentType;
 }
 
 const ShowItem: React.FC<ShowItemProps> = ({
@@ -38,7 +38,7 @@ const ShowItem: React.FC<ShowItemProps> = ({
             >
               Update
             </button>
-
+            
             <button
               className="mt-4 bg-red-500 text-white py-1 px-4 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
               onClick={() => deleteItem(item.id)}

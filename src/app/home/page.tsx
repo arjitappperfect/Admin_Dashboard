@@ -7,8 +7,9 @@ import ShowItem from "/Users/AppPerfect/Desktop/New folder/myapp/src/app/Compone
 import Counting from "/Users/AppPerfect/Desktop/New folder/myapp/src/app/Components/counting";
 import UpdateModal from "/Users/AppPerfect/Desktop/New folder/myapp/src/app/Components/UpdateModal";
 import toast, { Toaster } from "react-hot-toast";
-import Link from "next/link";
 import Modal from "../modal/page";
+import { useRouter } from "next/navigation";
+import jwt from "jsonwebtoken";
 
 const schema = z.object({
   phoneNumber: z
@@ -38,12 +39,21 @@ interface Item {
   phoneNumber: string;
   userName: string;
   password: string;
+  Admin: boolean;
+}
+interface DecodedToken {
+  userName: string; 
+  isAdmin: boolean; 
+  exp: number; 
+  iat: number;
 }
 
 const getLocalItems = (): Item[] => {
   const list = localStorage.getItem("lists");
   return list ? JSON.parse(list) : [];
 };
+
+  
 
 const getInitialCount = (): number => {
   const count = localStorage.getItem("count");
@@ -63,14 +73,35 @@ export default function Home() {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [inputUserName, setInputUserName] = useState<string>("");
   const [inputPassword, setInputPassword] = useState<string>("");
+  const router = useRouter();
+
+  const token = localStorage.getItem("token");
+  let decode: DecodedToken
+
+    if (token) {
+   decode = jwt.verify(token, "secret_key") as DecodedToken;
+    } else {
+      router.push("/Login");
+    }
+ 
+
+
+  const user = localStorage.getItem("users");
 
   useEffect(() => {
     localStorage.setItem("lists", JSON.stringify(items));
     localStorage.setItem("count", count.toString());
   }, [items, count]);
 
+  const len= items.length;
+  
+
   const addUsers = () => {
-    setShowModal(true);
+    if (decode.isAdmin === true) {
+      setShowModal(true);
+    } else {
+      toast("You are not allowed!");
+    }
   };
 
   const addItem = () => {
@@ -80,6 +111,7 @@ export default function Home() {
       userName: inputUserName,
       password: inputPassword,
       phoneNumber: inputPhoneNumber,
+      
     });
 
     if (!result.success) {
@@ -88,7 +120,7 @@ export default function Home() {
         errorMap[error.path[0]] = error.message;
       });
       setErrors(errorMap);
-      
+
       return;
     }
 
@@ -99,6 +131,8 @@ export default function Home() {
       userName: inputUserName,
       password: inputPassword,
       phoneNumber: inputPhoneNumber,
+      Admin: false,
+    
     };
 
     setItems([newItem, ...items]);
@@ -119,13 +153,27 @@ export default function Home() {
       item.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  
   const deleteItem = (id: number) => {
-    const updatedItems = items.filter((item) => item.id !== id);
-    setItems(updatedItems);
-    setCount(count - 1);
-    toast("Deleted Successfully!");
+    if (decode.isAdmin === true) {
+      if (id == 0) {
+        toast("You can't delete admin.");
+      } else {
+        const updatedItems = items.filter((item) => item.id !== id);
+        setItems(updatedItems);
+        setCount(count - 1);
+        toast("Deleted Successfully!");
+      }
+    } else {
+      toast("You are not allowed to delete");
+    }
   };
 
+  const handleclick = () => {
+    router.push("http://localhost:3000/");
+    localStorage.removeItem("users");
+    localStorage.removeItem("token");
+  };
   const onInputNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputName(event.target.value);
   };
@@ -156,24 +204,37 @@ export default function Home() {
   };
 
   const openEditModal = (item: Item) => {
-    setItemToUpdate(item);
-    setInputName(item.name);
-    setInputEmail(item.email);
-    setInputPhoneNumber(item.phoneNumber);
-    setShowUpdateModal(true);
+    if (decode.isAdmin === true) {
+      setItemToUpdate(item);
+      setInputName(item.name);
+      setInputEmail(item.email);
+      setInputPhoneNumber(item.phoneNumber);
+      setShowUpdateModal(true);
+    } else {
+      toast("You are not allowed to update.");
+    }
   };
 
   const updateItem = () => {
-    if (itemToUpdate) {
-      const updatedItem: Item = {
-        ...itemToUpdate,
-        name: inputName,
-        email: inputEmail,
-        phoneNumber: inputPhoneNumber,
-      };
-      try {
-        schema.parse(updatedItem);
-        setErrors({});
+    if (decode.isAdmin === true) {
+      if (itemToUpdate) {
+        const updatedItem: Item = {
+          ...itemToUpdate,
+          name: inputName,
+          email: inputEmail,
+          phoneNumber: inputPhoneNumber,
+        };
+
+        const result = schema.safeParse(updatedItem);
+        if (!result.success) {
+          const errorMap: Record<string, string> = {};
+          result.error.errors.forEach((error) => {
+            errorMap[error.path[0]] = error.message;
+          });
+          setErrors(errorMap);
+
+          return;
+        }
         const updatedItems = items.map((item) =>
           item.id === itemToUpdate.id ? updatedItem : item
         );
@@ -181,17 +242,11 @@ export default function Home() {
         setInputName("");
         setInputEmail("");
         setInputPhoneNumber("");
-        setCount(count); // Count remains unchanged
+        setCount(count);
         setShowUpdateModal(false);
-      } catch (error) {
-        if (error instanceof ZodError) {
-          setErrors(
-            error.errors.reduce((acc, err) => {
-              return { ...acc, [err.path[0]]: err.message };
-            }, {})
-          );
-        }
       }
+    } else {
+      toast("You are not allowed!");
     }
   };
 
@@ -208,12 +263,16 @@ export default function Home() {
               className="rounded-full border-2 border-blue-300"
             />
           </div>
-          <p className="text-xl font-semibold mb-4">Hi UserName</p>
-          <Link href="http://localhost:3000/">
-            <button className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-              Logout
-            </button>
-          </Link>
+          <p className="text-xl font-semibold mb-4">
+            Hi {decode.userName}
+          </p>
+
+          <button
+            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            onClick={handleclick}
+          >
+            Logout
+          </button>
         </div>
       </div>
 

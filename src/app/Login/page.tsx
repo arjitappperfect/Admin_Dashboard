@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import SignUp from "../SignUp/page";
 import "../globals.css";
+import jwt from 'jsonwebtoken'
+
 interface Item {
   id: number;
   name: string;
@@ -10,6 +11,12 @@ interface Item {
   userName: string;
   password: string;
   phoneNumber: string;
+  Admin: boolean;
+}
+
+const getLocalUser = ()=>{
+  const users= localStorage.getItem("user");
+  return users ? JSON.parse(users) : null
 }
 
 const getLocalItems = (): Item[] => {
@@ -23,16 +30,35 @@ export default function Login() {
   const [inputUserName, setInputUserName] = useState<string>("");
   const [items, setItems] = useState<Item[]>(getLocalItems());
   const [inputPassword, setInputPassword] = useState<string>("");
+  const [currentUser, setCurrentUser] =useState(getLocalUser());
+  
+  useEffect(() => {
+    if(currentUser){
+    localStorage.setItem("users", JSON.stringify(currentUser));
+    }
+  }, [currentUser]);
+  const users = localStorage.getItem('users');
 
+  useEffect(() => {
+    if (users) {
+      router.push('/home');
+    }
+  }, [users, router]);
+
+  
   const LoginclickHandle = () => {
     const user = items.find(
       (item) =>
         item.userName === inputUserName && item.password === inputPassword
     );
 
-    if (user) {
+    if (user) { 
+      const token = jwt.sign({ userName: user.userName ,password:user.password,isAdmin:user.Admin}, "secret_key");
+
+      localStorage.setItem("token", token);
+      setCurrentUser(user.userName)
       router.push("/home");
-    } else {
+    }  else {
       alert("Wrong username or password");
     }
   };
@@ -48,9 +74,12 @@ export default function Login() {
     setInputPassword(event.target.value);
   };
 
+  const handleclick=()=>{
+    router.push("/SignUp")
+  }
   return (
-    <div className="bg-slate-700 flex items-center justify-center min-h-screen p-4">
-      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
+    <div className='bg-slate-600 flex items-center justify-center min-h-screen p-4'>
+      <div className="max-w-md w-full bg-pink-200 shadow-lg rounded-lg p-8">
         <h2 className="text-2xl text-gray-800 mb-6 text-center">Login</h2>
         <div className="space-y-4">
           <div>
@@ -77,15 +106,23 @@ export default function Login() {
               onChange={onInputPasswordChange}
             />
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-center">
             <button
-              className="bg-indigo-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 mt-4"
+              className="bg-indigo-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 mt-4 "
               onClick={LoginclickHandle}
             >
               LOGIN
             </button>
-            <SignUp isHome={false} />
+            
+            {/* <SignUp isHome={false} /> */}
           </div>
+          <div className="flex justify-center">
+          <h3 >
+              Didn't have an account. Click here for <button className="underline text-red-500" 
+              onClick={handleclick}
+              >SignUp</button>
+            </h3>
+            </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,5 @@
-import Link from "next/link";
+
 import React, { ReactNode } from "react";
-import { deflate } from "zlib";
 
 interface ModalProps {
   isVisible: boolean;

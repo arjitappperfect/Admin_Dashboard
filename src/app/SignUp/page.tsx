@@ -1,10 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import "../globals.css";
-import Modal from "../modal/page";
+
 import { useRouter } from "next/navigation";
 import { z, ZodError } from "zod";
-import { error } from "console";
+import jwt from "jsonwebtoken";
 
 const schema = z.object({
   phoneNumber: z
@@ -27,6 +27,11 @@ const schema = z.object({
     ),
 });
 
+const getLocalUser = () => {
+  const users = localStorage.getItem("user");
+  return users ? JSON.parse(users) : null;
+};
+
 const getLocalItems = (): Item[] => {
   const list = localStorage.getItem("lists");
   return list ? JSON.parse(list) : [];
@@ -43,10 +48,10 @@ interface Item {
   userName: string;
   password: string;
   phoneNumber: string;
+  Admin: boolean;
 }
 
 export default function Home(props: any) {
-
   const [count, setCount] = useState<number>(getInitialCount());
   const [showModal, setShowModal] = useState<boolean>(false);
   const [items, setItems] = useState<Item[]>(getLocalItems());
@@ -57,13 +62,30 @@ export default function Home(props: any) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const router = useRouter();
   const [inputPhoneNumber, setInputPhoneNumber] = useState<string>("");
+  const [currentUser, setCurrentUser] = useState(getLocalUser());
+  const [isAdmin, setisAdmin] = useState<boolean>(false);
+
+  const users = localStorage.getItem("users");
+
+  useEffect(() => {
+    if (users) {
+      router.push("/home");
+    }
+  }, [users, router]);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem("users", JSON.stringify(currentUser));
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     localStorage.setItem("lists", JSON.stringify(items));
     localStorage.setItem("count", count.toString());
   }, [items, count]);
 
-  const addUsers = () => {
-    setShowModal(true);
+  const handleXbutton = () => {
+    router.push("/Login");
   };
 
   const addItem = () => {
@@ -81,12 +103,10 @@ export default function Home(props: any) {
         errorMap[error.path[0]] = error.message;
       });
       setErrors(errorMap);
-     console.log(result.error.errors)
-    console.log(errorMap);
+      console.log(result.error.errors);
+      console.log(errorMap);
       return;
     }
-
-  
 
     const newItem: Item = {
       id: items.length,
@@ -95,20 +115,59 @@ export default function Home(props: any) {
       userName: inputUserName,
       password: inputPassword,
       phoneNumber: inputPhoneNumber,
+      Admin: isAdmin,
     };
-    
-    setCount(count + 1);
-    setItems([newItem, ...items]);
-    setInputName("");
-    setInputEmail("");
-    setInputUserName("");
-    setInputPassword("");
-    setInputPhoneNumber("");
-    setErrors({});
-    setShowModal(false);
-    router.push("/home");
+
+    if (newItem.id == 0) {
+      newItem.Admin = true;
+      console.log(newItem);
+      setCurrentUser(newItem.userName);
+      setCount(count + 1);
+      setItems([newItem, ...items]);
+      setInputName("");
+      setInputEmail("");
+      setInputUserName("");
+      setInputPassword("");
+      setInputPhoneNumber("");
+      setErrors({});
+      setShowModal(false);
+      const token = jwt.sign(
+        {
+          userName: newItem.userName,
+          password: newItem.password,
+          isAdmin: newItem.Admin,
+        },
+        "secret_key"
+      );
+
+      localStorage.setItem("token", token);
+      router.push("/home");
+    } else {
+      newItem.Admin = false;
+      console.log(newItem);
+      setCurrentUser(newItem.userName);
+      setCount(count + 1);
+      setItems([newItem, ...items]);
+      setInputName("");
+      setInputEmail("");
+      setInputUserName("");
+      setInputPassword("");
+      setInputPhoneNumber("");
+      setErrors({});
+      setShowModal(false);
+      const token = jwt.sign(
+        {
+          userName: newItem.userName,
+          password: newItem.password,
+          isAdmin: newItem.Admin,
+        },
+        "secret_key"
+      );
+
+      localStorage.setItem("token", token);
+      router.push("/home");
+    }
   };
-  
 
   const onInputNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputName(event.target.value);
@@ -136,41 +195,30 @@ export default function Home(props: any) {
   };
   return (
     <>
-      <button
-        className="bg-indigo-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 mt-4"
-        onClick={addUsers}
-      >
-        Sign Up
-      </button>
-      <Modal
-        isVisible={showModal}
-        onClose={() => {
-          setInputName("");
-          setInputEmail("");
-          setInputUserName("");
-          setInputPassword("");
-          setErrors({});
-          setShowModal(false);
-        }}
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Name:
-            </label>
-            <input
-              type="text"
-              className={`w-full p-4 border ${
-                errors.name ? "border-red-500" : "border-gray-300"
-              } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150`}
-              placeholder="Enter name"
-              value={inputName}
-              onChange={onInputNameChange}
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm">{errors.name}</p>
-            )}
+      <div className="bg-slate-500 flex items-center justify-center min-h-screen p-4">
+        <div className="max-w-md w-full bg-pink-200 shadow-lg rounded-lg p-8">
+          <div className="flex justify-end">
+            <button
+              className="bg-red-600 text-white py-2 px-4 rounded-lg shadow-md"
+              onClick={handleXbutton}
+            >
+              X
+            </button>
           </div>
+          <h2 className="text-2xl text-gray-800 mb-6 text-center">SignUp</h2>
+
+          <label className="block text-gray-700 font-medium mb-1">Name:</label>
+          <input
+            type="text"
+            className={`w-full p-4 border ${
+              errors.name ? "border-red-500" : "border-gray-300"
+            } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150`}
+            placeholder="Enter name"
+            value={inputName}
+            onChange={onInputNameChange}
+          />
+          {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+
           <div>
             <label className="block text-gray-700 font-medium mb-1">
               Email:
@@ -247,7 +295,7 @@ export default function Home(props: any) {
             Add
           </button>
         </div>
-      </Modal>
+      </div>
     </>
   );
 }

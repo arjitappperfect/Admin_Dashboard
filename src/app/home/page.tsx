@@ -3,9 +3,9 @@ import "../globals.css";
 import Image from "next/image";
 import { z, ZodError } from "zod";
 import { useEffect, useState } from "react";
-import ShowItem from "/Users/AppPerfect/Desktop/New folder/myapp/src/app/Components/ShowItem";
-import Counting from "/Users/AppPerfect/Desktop/New folder/myapp/src/app/Components/counting";
-import UpdateModal from "/Users/AppPerfect/Desktop/New folder/myapp/src/app/Components/UpdateModal";
+import ShowItem from "../Components/ShowItem";
+import Counting from "../Components/counting";
+import UpdateModal from "../Components/UpdateModal";
 import toast, { Toaster } from "react-hot-toast";
 import Modal from "../modal/page";
 import { useRouter } from "next/navigation";
@@ -42,9 +42,9 @@ interface Item {
   Admin: boolean;
 }
 interface DecodedToken {
-  userName: string; 
-  isAdmin: boolean; 
-  exp: number; 
+  userName: string;
+  isAdmin: boolean;
+  exp: number;
   iat: number;
 }
 
@@ -52,8 +52,6 @@ const getLocalItems = (): Item[] => {
   const list = localStorage.getItem("lists");
   return list ? JSON.parse(list) : [];
 };
-
-  
 
 const getInitialCount = (): number => {
   const count = localStorage.getItem("count");
@@ -74,17 +72,15 @@ export default function Home() {
   const [inputUserName, setInputUserName] = useState<string>("");
   const [inputPassword, setInputPassword] = useState<string>("");
   const router = useRouter();
-
-  const token = localStorage.getItem("token");
-  let decode: DecodedToken
-
-    if (token) {
-   decode = jwt.verify(token, "secret_key") as DecodedToken;
-    } else {
-      router.push("/Login");
-    }
  
+  const token = localStorage.getItem("token");
+  let decode: DecodedToken;
 
+  if (token) {
+    decode = jwt.verify(token, "secret_key") as DecodedToken;
+  } else {
+    router.push("/Login");
+  }
 
   const user = localStorage.getItem("users");
 
@@ -93,8 +89,7 @@ export default function Home() {
     localStorage.setItem("count", count.toString());
   }, [items, count]);
 
-  const len= items.length;
-  
+  const len = items.length;
 
   const addUsers = () => {
     if (decode.isAdmin === true) {
@@ -111,7 +106,6 @@ export default function Home() {
       userName: inputUserName,
       password: inputPassword,
       phoneNumber: inputPhoneNumber,
-      
     });
 
     if (!result.success) {
@@ -132,7 +126,6 @@ export default function Home() {
       password: inputPassword,
       phoneNumber: inputPhoneNumber,
       Admin: false,
-    
     };
 
     setItems([newItem, ...items]);
@@ -146,28 +139,30 @@ export default function Home() {
     setShowModal(false);
   };
 
-  const filteredItems = items.filter(
+ 
+  let filteredItems = items.filter(
     (item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  
+
   const deleteItem = (id: number) => {
     if (decode.isAdmin === true) {
       if (id == 0) {
-        toast("You can't delete admin.");
+        toast.error("Not Allowed!")
       } else {
         const updatedItems = items.filter((item) => item.id !== id);
         setItems(updatedItems);
         setCount(count - 1);
-        toast("Deleted Successfully!");
       }
     } else {
-      toast("You are not allowed to delete");
+      toast.error("Not Allowed!")
     }
   };
+  
+  const lent = filteredItems.length
 
   const handleclick = () => {
     router.push("http://localhost:3000/");
@@ -211,7 +206,7 @@ export default function Home() {
       setInputPhoneNumber(item.phoneNumber);
       setShowUpdateModal(true);
     } else {
-      toast("You are not allowed to update.");
+      toast.error("Not Allowed!")
     }
   };
 
@@ -244,6 +239,7 @@ export default function Home() {
         setInputPhoneNumber("");
         setCount(count);
         setShowUpdateModal(false);
+        toast.success("Items Updated Successfully");
       }
     } else {
       toast("You are not allowed!");
@@ -263,9 +259,7 @@ export default function Home() {
               className="rounded-full border-2 border-blue-300"
             />
           </div>
-          <p className="text-xl font-semibold mb-4">
-            Hi {decode.userName}
-          </p>
+          <p className="text-xl font-semibold mb-4">Hi {user}</p>
 
           <button
             className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -273,6 +267,7 @@ export default function Home() {
           >
             Logout
           </button>
+          
         </div>
       </div>
 
@@ -280,7 +275,7 @@ export default function Home() {
         <Counting
           value={searchTerm}
           onChange={onSearchTermChange}
-          count={count}
+          count={lent}
         />
         <button
           className="w-full bg-indigo-600 text-white py-2 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300"
@@ -468,6 +463,7 @@ export default function Home() {
           deleteItem={deleteItem}
           openEditModal={openEditModal}
           Toaster={Toaster}
+          
         />
       </div>
     </div>

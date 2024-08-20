@@ -1,7 +1,4 @@
-
-
 import React from 'react';
-
 interface ModalsProps {
   isVisible: boolean;
   onClose: () => void;

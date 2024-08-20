@@ -36,7 +36,8 @@ const getLocalItems = (): Item[] => {
   const list = localStorage.getItem("lists");
   return list ? JSON.parse(list) : [];
 };
-const getInitialCount = (): number => {
+const getInitialCount = (): number  => {
+
   const count = localStorage.getItem("count");
   return count ? parseInt(count, 10) : 0;
 };

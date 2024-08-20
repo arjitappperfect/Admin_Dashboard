@@ -39,6 +39,8 @@ export default function Login() {
   }, [currentUser]);
   const users = localStorage.getItem('users');
 
+
+  
   useEffect(() => {
     if (users) {
       router.push('/home');
@@ -56,6 +58,7 @@ export default function Login() {
       const token = jwt.sign({ userName: user.userName ,password:user.password,isAdmin:user.Admin}, "secret_key");
 
       localStorage.setItem("token", token);
+      localStorage.setItem("users",user.userName)
       setCurrentUser(user.userName)
       router.push("/home");
     }  else {

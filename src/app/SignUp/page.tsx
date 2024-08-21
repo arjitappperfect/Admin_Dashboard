@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import "../globals.css";
 
 import { useRouter } from "next/navigation";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 import jwt from "jsonwebtoken";
 
 const schema = z.object({

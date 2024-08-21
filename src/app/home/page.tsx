@@ -72,7 +72,7 @@ export default function Home() {
   const [inputUserName, setInputUserName] = useState<string>("");
   const [inputPassword, setInputPassword] = useState<string>("");
   const router = useRouter();
- 
+
   const token = localStorage.getItem("token");
   let decode: DecodedToken;
 
@@ -88,8 +88,6 @@ export default function Home() {
     localStorage.setItem("lists", JSON.stringify(items));
     localStorage.setItem("count", count.toString());
   }, [items, count]);
-
-  const len = items.length;
 
   const addUsers = () => {
     if (decode.isAdmin === true) {
@@ -139,7 +137,6 @@ export default function Home() {
     setShowModal(false);
   };
 
- 
   let filteredItems = items.filter(
     (item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,28 +144,39 @@ export default function Home() {
       item.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-
   const deleteItem = (id: number) => {
     if (decode.isAdmin === true) {
       if (id == 0) {
-        toast.error("Not Allowed!")
+        toast.error("Not Allowed!");
       } else {
         const updatedItems = items.filter((item) => item.id !== id);
         setItems(updatedItems);
         setCount(count - 1);
       }
     } else {
-      toast.error("Not Allowed!")
+      toast.error("Not Allowed!");
     }
   };
-  
-  const lent = filteredItems.length
+
+  const deleteItemsSelected = (ids: number[]) => {
+    if (decode.isAdmin) {
+      const updatedItems = items.filter((item) => !ids.includes(item.id));
+      setItems(updatedItems);
+      setCount(updatedItems.length);
+      toast.success("Items deleted successfully");
+    } else {
+      toast.error("Not Allowed!");
+    }
+  };
+
+  const lent = filteredItems.length;
 
   const handleclick = () => {
     router.push("http://localhost:3000/");
     localStorage.removeItem("users");
     localStorage.removeItem("token");
   };
+
   const onInputNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputName(event.target.value);
   };
@@ -186,6 +194,7 @@ export default function Home() {
   const onSearchTermChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
+
   const onInputUserNameChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -206,7 +215,7 @@ export default function Home() {
       setInputPhoneNumber(item.phoneNumber);
       setShowUpdateModal(true);
     } else {
-      toast.error("Not Allowed!")
+      toast.error("Not Allowed!");
     }
   };
 
@@ -247,38 +256,36 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-200">
-      <div className="h-screen px-4 pt-8 pb-4 bg-blue-50 flex flex-col justify-between w-80">
-        <div className="flex flex-col items-center">
+    <div className="flex flex-col lg:flex-row h-screen bg-gray-200">
+      <div className="lg:w-1/4 bg-blue-50 flex flex-col justify-between p-4 lg:p-8">
+        <div className="flex flex-col items-center mb-4">
           <div className="w-24 h-24 mb-4">
             <Image
               src="/image.png"
-              alt=""
+              alt="Profile"
               width={90}
               height={90}
               className="rounded-full border-2 border-blue-300"
             />
           </div>
           <p className="text-xl font-semibold mb-4">Hi {user}</p>
-
           <button
             className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
             onClick={handleclick}
           >
             Logout
           </button>
-          
         </div>
       </div>
 
-      <div className="flex-1 p-8 bg-white shadow-lg rounded-lg">
+      <div className="flex-1 p-4 lg:p-8 bg-white shadow-lg rounded-lg">
         <Counting
           value={searchTerm}
           onChange={onSearchTermChange}
           count={lent}
         />
         <button
-          className="w-full bg-indigo-600 text-white py-2 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300"
+          className="w-full bg-indigo-600 text-white py-2 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 mb-4"
           onClick={addUsers}
         >
           Add Users
@@ -297,91 +304,29 @@ export default function Home() {
           }}
         >
           <div className="space-y-4">
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">
-                Name:
-              </label>
-              <input
-                type="text"
-                className={`w-full p-4 border ${
-                  errors.name ? "border-red-500" : "border-gray-300"
-                } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150`}
-                placeholder="Enter name"
-                value={inputName}
-                onChange={onInputNameChange}
-              />
-              {errors.name && (
-                <p className="text-red-500 text-sm">{errors.name}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">
-                Email:
-              </label>
-              <input
-                type="email"
-                className={`w-full p-4 border ${
-                  errors.email ? "border-red-500" : "border-gray-300"
-                } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150`}
-                placeholder="Enter email"
-                value={inputEmail}
-                onChange={onInputEmailChange}
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm">{errors.email}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">
-                UserName:
-              </label>
-              <input
-                type="text"
-                className={`w-full p-4 border ${
-                  errors.userName ? "border-red-500" : "border-gray-300"
-                } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150`}
-                placeholder="Enter username"
-                value={inputUserName}
-                onChange={onInputUserNameChange}
-              />
-              {errors.userName && (
-                <p className="text-red-500 text-sm">{errors.userName}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">
-                Password:
-              </label>
-              <input
-                type="password"
-                className={`w-full p-4 border ${
-                  errors.password ? "border-red-500" : "border-gray-300"
-                } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150`}
-                placeholder="Enter password"
-                value={inputPassword}
-                onChange={onInputPasswordChange}
-              />
-              {errors.password && (
-                <p className="text-red-500 text-sm">{errors.password}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">
-                Phone Number:
-              </label>
-              <input
-                type="text"
-                className={`w-full p-4 border ${
-                  errors.phoneNumber ? "border-red-500" : "border-gray-300"
-                } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150`}
-                placeholder="Enter password"
-                value={inputPhoneNumber}
-                onChange={onInputPhoneNumberChange}
-              />
-              {errors.phoneNumber && (
-                <p className="text-red-500 text-sm">{errors.phoneNumber}</p>
-              )}
-            </div>
+            {[
+              { label: "Name", type: "text", value: inputName, onChange: onInputNameChange, error: errors.name },
+              { label: "Email", type: "email", value: inputEmail, onChange: onInputEmailChange, error: errors.email },
+              { label: "UserName", type: "text", value: inputUserName, onChange: onInputUserNameChange, error: errors.userName },
+              { label: "Password", type: "password", value: inputPassword, onChange: onInputPasswordChange, error: errors.password },
+              { label: "Phone Number", type: "text", value: inputPhoneNumber, onChange: onInputPhoneNumberChange, error: errors.phoneNumber },
+            ].map(({ label, type, value, onChange, error }, index) => (
+              <div key={index}>
+                <label className="block text-gray-700 font-medium mb-1">
+                  {label}:
+                </label>
+                <input
+                  type={type}
+                  className={`w-full p-4 border ${error ? "border-red-500" : "border-gray-300"} rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150`}
+                  placeholder={`Enter ${label.toLowerCase()}`}
+                  value={value}
+                  onChange={onChange}
+                />
+                {error && (
+                  <p className="text-red-500 text-sm">{error}</p>
+                )}
+              </div>
+            ))}
 
             <button
               className="w-full bg-indigo-600 text-white py-2 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 mt-4"
@@ -391,6 +336,7 @@ export default function Home() {
             </button>
           </div>
         </Modal>
+
         <UpdateModal
           isVisible={showUpdateModal}
           onClose={() => {
@@ -402,59 +348,34 @@ export default function Home() {
           onSubmit={updateItem}
         >
           <div className="space-y-4">
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">
-                Name:
-              </label>
-              <input
-                type="text"
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150"
-                placeholder="Enter name"
-                value={inputName}
-                onChange={onInputNameChange}
-              />
-              {errors.name && (
-                <span className="text-red-700 text-sm">{errors.name}</span>
-              )}
-            </div>
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">
-                Email:
-              </label>
-              <input
-                type="email"
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150"
-                placeholder="Enter email"
-                value={inputEmail}
-                onChange={onInputEmailChange}
-              />
-              {errors.email && (
-                <span className="text-red-700 text-sm">{errors.email}</span>
-              )}
-            </div>
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">
-                Phone Number:
-              </label>
-              <input
-                type="tel"
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150"
-                placeholder="Enter phone number"
-                value={inputPhoneNumber}
-                onChange={onInputPhoneNumberChange}
-              />
-              {errors.phoneNumber && (
-                <span className="text-red-700 text-sm">
-                  {errors.phoneNumber}
-                </span>
-              )}
-              <button
-                className="w-full bg-indigo-600 text-white py-2 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 mt-4"
-                onClick={updateItem}
-              >
-                Update
-              </button>
-            </div>
+            {[
+              { label: "Name", type: "text", value: inputName, onChange: onInputNameChange, error: errors.name },
+              { label: "Email", type: "email", value: inputEmail, onChange: onInputEmailChange, error: errors.email },
+              { label: "Phone Number", type: "tel", value: inputPhoneNumber, onChange: onInputPhoneNumberChange, error: errors.phoneNumber },
+            ].map(({ label, type, value, onChange, error }, index) => (
+              <div key={index}>
+                <label className="block text-gray-700 font-medium mb-1">
+                  {label}:
+                </label>
+                <input
+                  type={type}
+                  className={`w-full p-4 border ${error ? "border-red-500" : "border-gray-300"} rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150`}
+                  placeholder={`Enter ${label.toLowerCase()}`}
+                  value={value}
+                  onChange={onChange}
+                />
+                {error && (
+                  <span className="text-red-700 text-sm">{error}</span>
+                )}
+              </div>
+            ))}
+
+            <button
+              className="w-full bg-indigo-600 text-white py-2 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 mt-4"
+              onClick={updateItem}
+            >
+              Update
+            </button>
           </div>
         </UpdateModal>
 
@@ -463,7 +384,7 @@ export default function Home() {
           deleteItem={deleteItem}
           openEditModal={openEditModal}
           Toaster={Toaster}
-          
+          deleteItemsSelected={deleteItemsSelected}
         />
       </div>
     </div>

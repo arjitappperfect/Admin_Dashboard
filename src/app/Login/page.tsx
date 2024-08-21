@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "../globals.css";
 import jwt from 'jsonwebtoken'
+import toast, { Toaster } from "react-hot-toast";
 
 interface Item {
   id: number;
@@ -62,7 +63,7 @@ export default function Login() {
       setCurrentUser(user.userName)
       router.push("/home");
     }  else {
-      alert("Wrong username or password");
+     toast.error("No Entries");
     }
   };
 
@@ -116,8 +117,6 @@ export default function Login() {
             >
               LOGIN
             </button>
-            
-            {/* <SignUp isHome={false} /> */}
           </div>
           <div className="flex justify-center">
           <h3 >
@@ -126,6 +125,7 @@ export default function Login() {
               >SignUp</button>
             </h3>
             </div>
+            <Toaster/>
         </div>
       </div>
     </div>
